@@ -18,6 +18,7 @@ public delegate void CameraMovementFunction();
 public class CameraController : NetworkedBehaviour {
     private static string ZOOM_TIMER = "CameraZoom";
     private static string IDLE_TIMER = "CameraIdle";
+    private static string LOCK_TIMER = "CameraLock";
     [Header("Linked Components")]
     public Camera controlled_camera;
     public GameObject home;
@@ -33,6 +34,7 @@ public class CameraController : NetworkedBehaviour {
     // Camera state
     private ViewMode view_mode;
     private PlayerController current_player;
+    private GameObject target_lock;
 
     private GameObject player_container;
     private Vector2 mouseAccumulator = Vector2.zero;
@@ -81,6 +83,7 @@ public class CameraController : NetworkedBehaviour {
         utils = Utilities.Instance;
         utils.CreateTimer(ZOOM_TIMER, 0.5f);
         utils.CreateTimer(IDLE_TIMER, 1.0f);
+        utils.CreateTimer(LOCK_TIMER, 0.1f);
 
         opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
         original_model = home.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
@@ -404,13 +407,26 @@ public class CameraController : NetworkedBehaviour {
     }
 
     private void HandleTargetLock() {
-        if (input_manager.GetCenterCameraHold()) {
+        bool lock_requested = !utils.CheckTimer(LOCK_TIMER);
+        if (input_manager.GetCenterCameraHold() || lock_requested) {
             utils.ResetTimer(IDLE_TIMER);
             Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
+            if (target_lock) {
+                Vector3 dir = target_lock.transform.position - current_player.transform.position;
+                orientation = EulerToMouseAccum(Quaternion.LookRotation(dir, current_player.transform.up).eulerAngles);
+            }
             mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, orientation.x, 0.1f);
             mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, orientation.y, 0.1f);
             idleOrientation = mouseAccumulator;
         }
+        if (!lock_requested) {
+            target_lock = null;
+        }
+    }
+
+    private void RequestTargetLock(GameObject target = null) {
+        target_lock = target;
+        utils.ResetTimer(LOCK_TIMER);
     }
 
     private void FollowPlayerVelocity() {

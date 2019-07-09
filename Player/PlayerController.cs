@@ -25,6 +25,7 @@ public class PlayerController : NetworkedBehaviour {
     public float SpeedDampMult;
     public float AirSpeedDampMult;
     public float ClimbSpeedDampMult;
+    public float GroundWallSpeedDampMult;
     public float SlideSpeedMult;
     public float DownGravityAdd;
     public float JumpVelocityMult;
@@ -115,6 +116,7 @@ public class PlayerController : NetworkedBehaviour {
     private float WallScanDistanceMult;
     private float LedgeClimbOffsetMult;
     private float WallDistanceThresholdMult;
+    private Vector3 LastGroundWallNormal;
 
     // Physics state variables
     private AccelerationFunction accelerate;
@@ -334,6 +336,7 @@ public class PlayerController : NetworkedBehaviour {
         SpeedDampMult = 40f; // proportional to radius
         AirSpeedDampMult = 0.02f; // proportional to radius
         ClimbSpeedDampMult = 40f; // proportional to radius
+        GroundWallSpeedDampMult = 200f; // proportional to radius
         SlideSpeedMult = 36f; // proportional to radius
         // Gravity modifiers
         DownGravityAdd = 0;
@@ -380,6 +383,7 @@ public class PlayerController : NetworkedBehaviour {
         SpeedDampMult = 40f; // proportional to radius
         AirSpeedDampMult = 0.02f; // proportional to radius
         ClimbSpeedDampMult = 40f; // proportional to radius
+        GroundWallSpeedDampMult = 200f; // proportional to radius
         SlideSpeedMult = 44f; // proportional to radius
         // Gravity modifiers
         DownGravityAdd = 0;
@@ -565,6 +569,9 @@ public class PlayerController : NetworkedBehaviour {
                     if (IsWall(hit.normal)) {
                         if (!OnGround()) {
                             UpdateWallConditions(hit.normal);
+                        }
+                        else {
+                            LastGroundWallNormal = hit.normal;
                         }
                         utils.ResetTimer(WALL_HIT_TIMER);
                         current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
@@ -1152,7 +1159,7 @@ public class PlayerController : NetworkedBehaviour {
 
     #region HANDLE_CLIMBING
     private void HandleClimbing() {
-        // HandleClimbableSurfaces();
+        HandleClimbableSurfaces();
     }
 
     private void HandleClimbableSurfaces() {
@@ -1170,11 +1177,25 @@ public class PlayerController : NetworkedBehaviour {
             Debug.DrawRay(transform.position, transform.up * wallAxisMove, Color.red);
             Accelerate(transform.up * wallAxisMove * ClimbSpeedMult * cc.radius);
             player_camera.RotatePlayerToward(Vector3.ProjectOnPlane(-PreviousWallNormal, transform.up), 0.5f);
+            player_camera.RotateCameraToward((transform.up * wallAxisMove) * (wallAxisMove > 0 ? 2f : 1f) + transform.forward, 0.003f);
             utils.ResetTimer(REGRAB_TIMER);
             Debug.DrawRay(currentHitPos, currentHitNormal, Color.blue, 10f);
         }
         else {
-            if (IsOnWall()) Debug.Log("On wall on ground");
+            if (IsOnWall()) {
+                Debug.Log("On wall on ground");
+                float wall_move_cos = Vector3.Dot(-LastGroundWallNormal, GetMoveVector());
+                if (wall_move_cos > 0.7f) {
+                    Debug.Log("Running into wall");
+                    player_camera.RotatePlayerToward(Vector3.ProjectOnPlane(-LastGroundWallNormal, transform.up), 0.02f * wall_move_cos);
+                    player_camera.RotateCameraToward(-LastGroundWallNormal, 0.02f * wall_move_cos);
+
+                }
+                if (wall_move_cos > 0.0f) {
+                    Vector3 wallvel = Vector3.ProjectOnPlane(current_velocity, LastGroundWallNormal);
+                    Accelerate(-wallvel * GroundWallSpeedDampMult * cc.radius * wall_move_cos);
+                }
+            }
         }
     }
 
