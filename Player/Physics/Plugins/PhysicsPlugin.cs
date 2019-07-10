@@ -32,7 +32,10 @@ public class PhysicsPlugin : ComponentPlugin {
         IsServer = (context as PhysicsPropHandler).GetIsServer();
         networkedObject = (context as PhysicsPropHandler).NetworkedObject;
         enabled = true;
+        Setup();
     }
+
+    protected virtual void Setup() { }
 
     public virtual void OnTriggerEnter(Collider other, PhysicsProp prop) { }
 
@@ -47,6 +50,8 @@ public class PhysicsPlugin : ComponentPlugin {
     public virtual void OnCollisionExit(Collision other, PhysicsProp prop) { }
 
     public virtual void OnControllerColliderHit(ControllerColliderHit hit, PhysicsProp prop) { }
+
+    public virtual void OnWallHit(Vector3 normal, Vector3 point, GameObject go, PhysicsProp prop) { }
 
     // A return value of true "hides" the regular use behavior of the player controller
     public virtual bool OnUse(PhysicsProp prop) { return false; }

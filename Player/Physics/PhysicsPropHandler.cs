@@ -16,7 +16,8 @@ public class PhysicsPropHandler : NetworkedBehaviour {
             {typeof(Wind), new NullPlugin(context: this)},
             {typeof(Launcher), new LaunchHandler(context: this)},
             {typeof(Launchable), new NullPlugin(context: this)},
-            {typeof(Breakable), new NullPlugin(context: this)}
+            {typeof(Breakable), new NullPlugin(context: this)},
+            {typeof(Climbable), new Climber(context: this)}
         };
 
         foreach (PhysicsPlugin plugin in plugins.Values) {
@@ -124,6 +125,14 @@ public class PhysicsPropHandler : NetworkedBehaviour {
         foreach (PhysicsProp prop in props) {
             PhysicsPlugin plugin = plugins[prop.GetType()];
             if (plugin.enabled) plugin.OnControllerColliderHit(hit, prop);
+        }
+    }
+
+    public void OnWallHit(Vector3 normal, Vector3 point, GameObject go) {
+        PhysicsProp[] props = go.GetComponents<PhysicsProp>();
+        foreach (PhysicsProp prop in props) {
+            PhysicsPlugin plugin = plugins[prop.GetType()];
+            if (plugin.enabled) plugin.OnWallHit(normal, point, go, prop);
         }
     }
 
