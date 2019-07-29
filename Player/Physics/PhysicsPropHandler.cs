@@ -17,7 +17,8 @@ public class PhysicsPropHandler : NetworkedBehaviour {
             {typeof(Launcher), new LaunchHandler(context: this)},
             {typeof(Launchable), new NullPlugin(context: this)},
             {typeof(Breakable), new NullPlugin(context: this)},
-            {typeof(Climbable), new Climber(context: this)}
+            {typeof(Climbable), new Climber(context: this)},
+            {typeof(Water), new Swimmer(context: this)}
         };
 
         foreach (PhysicsPlugin plugin in plugins.Values) {
