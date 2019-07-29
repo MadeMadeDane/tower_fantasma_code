@@ -31,18 +31,20 @@ public class LaunchHandler : PhysicsPlugin {
             Vector3 relativeOffsetVelocity = Vector3.zero;
             // If we are already moving upward relative to the launcher, add the impulse onto that.
             // If we are moving downward, cancel all downward momentum and give the desired impulse.
-            if (Vector3.Dot(InitialPlayerVelocity, force.normalized) > 0f) relativeOffsetVelocity = InitialPlayerVelocity;
+            if (CurrentLauncher.conserveUpwardsMomentum && Vector3.Dot(InitialPlayerVelocity, force.normalized) > 0f) relativeOffsetVelocity = InitialPlayerVelocity;
             Vector3 velocityAlongLauncher = Vector3.Project(player.GetVelocity() - relativeOffsetVelocity, force.normalized);
             if (force.magnitude > velocityAlongLauncher.magnitude) force = (force - velocityAlongLauncher) / Time.fixedDeltaTime;
             else force = Vector3.zero;
         }
+        player.SetInAir();
         player.Accelerate(force);
     }
 
     public override void OnTriggerStay(Collider other, PhysicsProp prop) {
         if (!IsOwner) return;
-        CurrentLauncher = prop as Launcher;
-        if (!CurrentLauncher.activated) return;
+        Launcher newlauncher = prop as Launcher;
+        if (!newlauncher.activated) return;
+        CurrentLauncher = newlauncher;
         utils.ResetTimer(LAUNCH_TIMER);
     }
 

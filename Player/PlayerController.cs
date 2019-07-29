@@ -81,6 +81,7 @@ public class PlayerController : NetworkedBehaviour {
     private string MOVING_INTERIOR_TIMER = "MovingInterior";
     private string STUCK_TIMER = "Stuck";
     private string CROUCH_TIMER = "Crouch";
+    private string SWIM_TIMER = "SwimTimer";
 
     // Jumping state variables
     private float JumpMeterThreshold;
@@ -320,6 +321,7 @@ public class PlayerController : NetworkedBehaviour {
         utils.CreateTimer(MOVING_INTERIOR_TIMER, 0.1f).setFinished();
         utils.CreateTimer(STUCK_TIMER, 0.2f).setFinished();
         utils.CreateTimer(CROUCH_TIMER, 0.1f).setFinished();
+        utils.CreateTimer(SWIM_TIMER, 0.1f).setFinished();
         utils.CreateTimer(SET_GRAVITY_TIMER, 0.1f).setFinished();
 
         if (debug_mode) {
@@ -934,6 +936,9 @@ public class PlayerController : NetworkedBehaviour {
 
     #region HANDLE_CROUCHING
     private void HandleCrouch() {
+        // Don't handle crouches normally in water
+        if (IsSwimming()) return;
+
         if (ToggleCrouch) {
             if (!utils.CheckTimer(CROUCH_TIMER)) {
                 if (!isCrouching) {
@@ -1001,6 +1006,9 @@ public class PlayerController : NetworkedBehaviour {
             GravityMult = 0;
             return;
         }
+
+        // If we are swimming let the swimmer plugin handle movement
+        if (IsSwimming()) return;
 
         Vector3 planevelocity = Vector3.ProjectOnPlane(current_velocity, lastFloorHitNormal);
         Vector3 movVec = GetMoveVector();
@@ -1233,6 +1241,9 @@ public class PlayerController : NetworkedBehaviour {
     #region HANDLE_JUMPING
     // Handle jumping
     private void HandleJumping() {
+        // Let the swimmer plugin handle jumping in water
+        if (IsSwimming()) return;
+
         // Ground detection for friction and jump state
         if (OnGround() || IsHanging()) {
             isJumping = false;
@@ -1492,6 +1503,10 @@ public class PlayerController : NetworkedBehaviour {
     public Vector3 GetVelocity() => current_velocity;
 
     public Vector3 GetAcceleration() => accel;
+
+    public bool IsSwimming() {
+        return !utils.CheckTimer(SWIM_TIMER);
+    }
     #endregion
 
     #region PUBLIC_INPUT_INTERFACE
@@ -1507,6 +1522,22 @@ public class PlayerController : NetworkedBehaviour {
     public void SetGravity(float gravity_scale) {
         defaultGravityMult = gravity_scale;
         utils.ResetTimer(SET_GRAVITY_TIMER);
+    }
+
+    public void SetOnGround() {
+        utils.ResetTimer(LANDING_TIMER);
+    }
+
+    public void SetInAir() {
+        utils.SetTimerFinished(LANDING_TIMER);
+    }
+
+    public void SetSwimming() {
+        utils.ResetTimer(SWIM_TIMER);
+    }
+
+    public void UnsetSwimming() {
+        utils.SetTimerFinished(SWIM_TIMER);
     }
 
     public void PreventLedgeGrab() {

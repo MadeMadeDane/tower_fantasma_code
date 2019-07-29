@@ -17,7 +17,7 @@ public class Climber : PhysicsPlugin {
         utils.CreateTimer(CLIMB_TIMER, 0.1f);
     }
 
-    public override void Update() {
+    public override void FixedUpdate() {
         if (utils.CheckTimer(CLIMB_TIMER)) PreviousWall = null;
         HandleClimbableSurfaces();
     }

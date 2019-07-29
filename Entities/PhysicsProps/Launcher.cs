@@ -11,4 +11,5 @@ public class Launcher : PhysicsProp {
     public bool isLocalForce;
     public bool isImpulse;
     public bool activated;
+    public bool conserveUpwardsMomentum;
 }

@@ -33,7 +33,7 @@ public class Launchable : PhysicsProp {
             Vector3 relativeOffsetVelocity = Vector3.zero;
             // If we are already moving upward relative to the launcher, add the impulse onto that.
             // If we are moving downward, cancel all downward momentum and give the desired impulse.
-            if (Vector3.Dot(InitialVelocity, force.normalized) > 0f) relativeOffsetVelocity = InitialVelocity;
+            if (CurrentLauncher.conserveUpwardsMomentum && Vector3.Dot(InitialVelocity, force.normalized) > 0f) relativeOffsetVelocity = InitialVelocity;
             Vector3 velocityAlongLauncher = Vector3.Project(rigidbody.velocity - relativeOffsetVelocity, force.normalized);
             if (force.magnitude > velocityAlongLauncher.magnitude) force = (force - velocityAlongLauncher);
             else force = Vector3.zero;
