@@ -5,6 +5,7 @@ using System.Linq;
 using System;
 using UnityEngine;
 using MLAPI.Serialization;
+using MLAPI.Serialization.Pooled;
 
 public class NetworkInventory : Inventory<NetworkSharedItem>, IBitWritable {
     public void Read(Stream stream) {

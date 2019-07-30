@@ -4,7 +4,8 @@ using System;
 using UnityEngine;
 using System.Linq;
 using MLAPI;
-using MLAPI.Serialization;
+using MLAPI.Serialization.Pooled;
+using MLAPI.Messaging;
 
 /// <summary>
 /// A slightly better prototype component for syncing transforms
@@ -86,7 +87,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
             InterpolateServer = false;
     }
 
-    public override void OnDestroyed() {
+    private void OnDestroy() {
         if (Utilities.Instance != null) Utilities.Instance.RemoveTimer(UPDATE_TIMER);
     }
 

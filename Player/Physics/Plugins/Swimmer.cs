@@ -16,6 +16,7 @@ public class Swimmer : PhysicsPlugin {
     }
 
     public override void FixedUpdate() {
+        if (!IsOwner) return;
         if (!player.IsSwimming()) currentWater = null;
         HandleSwimming();
     }

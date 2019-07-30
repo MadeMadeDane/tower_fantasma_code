@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using MLAPI.Components;
+using MLAPI.Spawning;
 
 public class Utilities : UnitySingleton<Utilities> {
     private Dictionary<string, Timer> Timers = new Dictionary<string, Timer>();
@@ -202,17 +202,17 @@ public class Utilities : UnitySingleton<Utilities> {
     private void FixedUpdate() {
         IncrementTimers();
     }
-    public T get<T>() where T:Component {
+    public T get<T>() where T : Component {
         if (!player_data.ContainsKey(typeof(T))) {
             if (currentPlayer == null) {
-               currentPlayer = SpawnManager.GetLocalPlayerObject().gameObject;
+                currentPlayer = SpawnManager.GetLocalPlayerObject().gameObject;
             }
             if (currentPlayer == null) return null;
             Component component = currentPlayer.GetComponentInChildren<T>();
             if (component == null) return null;
             player_data[typeof(T)] = component;
         }
-        return (T) player_data[typeof(T)];
+        return (T)player_data[typeof(T)];
     }
 }
 

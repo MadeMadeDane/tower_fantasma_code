@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using MLAPI;
+using MLAPI.Messaging;
 using MLAPI.Serialization;
 using System.IO;
 using System;

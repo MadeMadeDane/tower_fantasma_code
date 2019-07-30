@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
 using System.IO;
-using MLAPI.Serialization;
+using MLAPI.Serialization.Pooled;
+using MLAPI.Messaging;
 
 public class PlayerAnimator : NetworkedBehaviour {
     public Animator animator;

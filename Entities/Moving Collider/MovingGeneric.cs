@@ -45,7 +45,7 @@ public class MovingGeneric : NetworkedObjectTransform {
         }
     }
 
-    public override void OnDestroyed() {
+    private void OnDestroy() {
         MovingObjectDict[NetworkId].RemoveAt(GetMovingObjectIndex());
         if (MovingObjectDict[NetworkId].Count == 0) MovingObjectDict.Remove(NetworkId);
     }

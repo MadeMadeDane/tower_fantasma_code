@@ -14,10 +14,12 @@ public class Climber : PhysicsPlugin {
     public Climber(PhysicsPropHandler context) : base(context) { }
 
     protected override void Setup() {
+        if (!IsOwner) return;
         utils.CreateTimer(CLIMB_TIMER, 0.1f);
     }
 
     public override void FixedUpdate() {
+        if (!IsOwner) return;
         if (utils.CheckTimer(CLIMB_TIMER)) PreviousWall = null;
         HandleClimbableSurfaces();
     }
@@ -44,6 +46,7 @@ public class Climber : PhysicsPlugin {
     }
 
     public override void OnWallHit(Vector3 normal, Vector3 point, GameObject go, PhysicsProp prop) {
+        if (!IsOwner) return;
         PreviousWallNormal = normal;
         PreviousWallPos = point;
         PreviousWall = prop as Climbable;

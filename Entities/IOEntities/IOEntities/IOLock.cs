@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using MLAPI;
+using MLAPI.Messaging;
 
 [AddComponentMenu("IOEntities/IOLock")]
 [RequireComponent(typeof(Collider))]

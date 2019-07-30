@@ -41,7 +41,7 @@ public class WorldItem : NetworkedBehaviour {
     void HandleHighlight() {
         emitter.enabled = !utils.CheckTimer(ATTACH_TIMER);
     }
-    public override void OnDestroyed() {
+    private void OnDestroy() {
         UnregisterWithWorldItemTracker();
     }
     void RegisterWithWorldItemTracker() {

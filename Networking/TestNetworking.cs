@@ -4,7 +4,7 @@ using UnityEngine;
 using System.Linq;
 using UnityEngine.UI;
 using MLAPI;
-using MLAPI.Components;
+using MLAPI.SceneManagement;
 using MLAPI.Transports.UNET;
 using UnityEngine.Networking;
 

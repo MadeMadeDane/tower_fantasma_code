@@ -60,13 +60,13 @@ public class PhysicsPropHandler : NetworkedBehaviour {
         }
     }
 
-    public override void OnDisabled() {
+    private void OnDisable() {
         foreach (PhysicsPlugin plugin in plugins.Values) {
             plugin.OnDisable();
         }
     }
 
-    public override void OnDestroyed() {
+    private void OnDestroy() {
         foreach (PhysicsPlugin plugin in plugins.Values) {
             plugin.OnDisable();
             plugin.OnDestroy();
