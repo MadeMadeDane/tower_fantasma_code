@@ -38,7 +38,13 @@ public class Rope : SharedItem {
     private RopePoint GetTargetRopePoint() {
         RopePoint[] targetedRps = GameObject.FindObjectsOfType<RopePoint>();
         Func<RopePoint, Vector3> GetDist = (RopePoint rp) => rp.transform.position - player.transform.position;
-        Func<RopePoint, float> GetAng = (RopePoint rp) => Vector3.Dot(GetDist(rp).normalized, player.transform.forward);
+        bool player_controlled = true;
+        Vector3 intended_dir = player.GetMoveVector();
+        if (intended_dir.magnitude < 0.3f) {
+            intended_dir = player.transform.forward;
+            player_controlled = false;
+        }
+        Func<RopePoint, float> GetAng = (RopePoint rp) => Vector3.Dot(GetDist(rp).normalized, intended_dir);
         Func<RopePoint, float> GetFutureMag = (RopePoint rp) => {
             float ropeSpeed = ropeSpeedMult * player.cc.radius;
             float ropeRelSpeed = ((ropeSpeed * GetDist(rp).normalized) - player.GetVelocity()).magnitude;
@@ -52,8 +58,8 @@ public class Rope : SharedItem {
 
         RopePoint[] sortedRps = targetedRps.Where((RopePoint rp) => Mathf.Min(GetDist(rp).magnitude, GetFutureMag(rp)) < (2f * player.cc.radius * ropeLenMult))
                                            .OrderByDescending(GetAng).ToArray();
-        // If we are in the air, prefer rope points that are above us if there are any
-        if (!player.OnGround()) {
+        // If we are in the air, prefer rope points that are above us if there are any. Disable this if the player wants to go somewhere else
+        if (!player.OnGround() && !player_controlled) {
             RopePoint idealRp = sortedRps.Where((RopePoint rp) => Vector3.Dot(GetDist(rp), player.transform.up) > 0).FirstOrDefault();
             if (idealRp) return idealRp;
         }
