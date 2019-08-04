@@ -23,6 +23,7 @@ public class Rope : SharedItem {
 
     public float hitDistance;
     public float ropeLenMult = 15.0f;
+    public float ropeSpeedMult = 75f;
 
     public float ropeProjectileRadius = 0.5f;
     public RenderedRope visualRope;
@@ -34,17 +35,43 @@ public class Rope : SharedItem {
         visualRope = new RenderedRope(ropePiecePrefab, ropePieceLen);
     }
 
+    private RopePoint GetTargetRopePoint() {
+        RopePoint[] targetedRps = GameObject.FindObjectsOfType<RopePoint>();
+        Func<RopePoint, Vector3> GetDist = (RopePoint rp) => rp.transform.position - player.transform.position;
+        Func<RopePoint, float> GetAng = (RopePoint rp) => Vector3.Dot(GetDist(rp).normalized, player.transform.forward);
+        Func<RopePoint, float> GetFutureMag = (RopePoint rp) => {
+            float ropeSpeed = ropeSpeedMult * player.cc.radius;
+            float ropeRelSpeed = ((ropeSpeed * GetDist(rp).normalized) - player.GetVelocity()).magnitude;
+            // relative speed is an approximation assuming the player moves at constant velocity.
+            // for extreme cases where we think the rope will never be caught this approximation is innacurate.
+            // limit the speed to at minimum 1/5 of the intended speed
+            ropeRelSpeed = Mathf.Max(ropeRelSpeed, ropeSpeed / 5f);
+            float ropeTravelDist = ropeLenMult * player.cc.radius;
+            return (rp.transform.position - (player.transform.position + (player.GetVelocity() * ropeTravelDist / ropeRelSpeed))).magnitude;
+        };
+
+        RopePoint[] sortedRps = targetedRps.Where((RopePoint rp) => Mathf.Min(GetDist(rp).magnitude, GetFutureMag(rp)) < (2f * player.cc.radius * ropeLenMult))
+                                           .OrderByDescending(GetAng).ToArray();
+        // If we are in the air, prefer rope points that are above us if there are any
+        if (!player.OnGround()) {
+            RopePoint idealRp = sortedRps.Where((RopePoint rp) => Vector3.Dot(GetDist(rp), player.transform.up) > 0).FirstOrDefault();
+            if (idealRp) return idealRp;
+        }
+        // If not just return the one closest to our angle
+        return sortedRps.FirstOrDefault();
+    }
+
     public override void Update() {
         if (SharedItemButtonPress() && !ropeFired && ropeObject == null) {
-            RopePoint[] targetedRps = GameObject.FindObjectsOfType<RopePoint>();
-            RopePoint targetedRp = targetedRps.OrderBy((RopePoint rp) => (rp.transform.position - player.transform.position).magnitude).FirstOrDefault();
+            RopePoint targetedRp = GetTargetRopePoint();
+            if (!targetedRp) return;
 
             ropeObject = utils.FireProjectile(
                 shooter: player.gameObject,
                 cb: hit_cb,
                 projectileRadius: ropeProjectileRadius,
                 // startingVelocity: player.player_camera.transform.forward * player.cc.radius * 75,
-                startingVelocity: (targetedRp.transform.position - player.transform.position).normalized * player.cc.radius * 75f,
+                startingVelocity: (targetedRp.transform.position - player.transform.position).normalized * player.cc.radius * ropeSpeedMult,
                 lifetime: 100f,
                 maxDistance: player.cc.radius * ropeLenMult,
                 prefab: ropeProjectilePrefab);
