@@ -6,9 +6,13 @@ using MLAPI;
 
 public class SharedItem : Item {
     protected InputManager im;
+    protected Utilities utils;
+    protected PlayerController player;
     public override void Start() {
         base.Start();
-        im = InputManager.Instance;  
+        im = InputManager.Instance; 
+        utils = Utilities.Instance;
+        player = utils.get<PlayerController>();
     }
     public static bool isSharedItem(Item item) {
         return item.type == typeof(SharedItem);
@@ -18,6 +22,10 @@ public class SharedItem : Item {
     }
     protected bool SharedItemButtonPress() {
         bool ret = im.GetSharedItem();
+        return ret;
+    }
+    protected bool SharedItemButtonHold() {
+        bool ret = im.GetSharedItemHold();
         return ret;
     }
 }
