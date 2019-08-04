@@ -214,6 +214,35 @@ public class Utilities : UnitySingleton<Utilities> {
         }
         return (T)player_data[typeof(T)];
     }
+    public GameObject FireProjectile(GameObject shooter,
+                               Func<GameObject,bool> cb,
+                               float projectileRadius,
+                               Vector3 startingVelocity,
+                               float lifetime,
+                               float maxDistance = 0f,
+                               Vector3 startingOffset = default(Vector3),
+                               GameObject prefab = null) {
+        int IGNORE_RAYCAST_LAYER = LayerMask.NameToLayer("Ignore Raycast");
+        GameObject go = prefab ? Instantiate(prefab) : new GameObject("rope_projectile");
+        Projectile projectile = go.AddComponent<Projectile>();
+        projectile.transform.position = shooter.transform.position + startingOffset;
+        projectile.callback = cb;
+        projectile.shooter = shooter;
+        projectile.maxDistance = maxDistance;
+        SphereCollider col = projectile.gameObject.AddComponent<SphereCollider>();
+        col.radius = projectileRadius;
+        col.isTrigger = true;
+        foreach (Collider collider in shooter.GetComponentsInChildren<Collider>()){
+            Physics.IgnoreCollision(col, collider);
+        }
+        col.gameObject.layer = IGNORE_RAYCAST_LAYER;
+        Rigidbody rb = projectile.gameObject.AddComponent<Rigidbody>();
+        rb.useGravity = false;
+        rb.isKinematic = true;
+        projectile.velocity = startingVelocity;
+        projectile.lifetime = lifetime;
+        return go;
+    }
 }
 
 

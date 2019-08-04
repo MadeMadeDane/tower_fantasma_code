@@ -9,7 +9,8 @@ public class ItemCatalogue {
         {new MagnetBoots().name(), new ItemCatalogueEntry(typeof(MagnetBoots), typeof(AbilityItem), "", "")},
         {new BoltCutters().name(), new ItemCatalogueEntry(typeof(BoltCutters), typeof(SharedItem), "", "")},
         {new GoldKey().name(), new ItemCatalogueEntry(typeof(GoldKey), typeof(SharedItem), "", "")},
-        {new Tankard().name(), new ItemCatalogueEntry(typeof(Tankard), typeof(SharedItem), "", "")}
+        {new Tankard().name(), new ItemCatalogueEntry(typeof(Tankard), typeof(SharedItem), "", "")},
+        {new Rope().name(), new ItemCatalogueEntry(typeof(Rope), typeof(SharedItem), "", "")}
     };
     public static Item RequestItem(string item_name) {
         Item requested_item = Activator.CreateInstance(items[item_name].type) as Item;

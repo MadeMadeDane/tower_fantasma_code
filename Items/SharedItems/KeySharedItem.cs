@@ -3,16 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class KeySharedItem : SharedItem {
-    private Utilities utils;
 
     public float reach_distance = 5f; // TODO: Use camera as interface to scan
     public float explosion_radius = 1f; // TODO: Use camera as interface to scan
     // Use this for initialization
-
-    public override void Start() {
-        base.Start();
-        utils = Utilities.Instance;
-    }
 
     public override void Update() {
         if (SharedItemButtonPress()) {
