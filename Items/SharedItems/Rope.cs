@@ -76,6 +76,10 @@ public class Rope : SharedItem {
         Vector3 distanceVec = connectedRopePoint.transform.position - player.transform.position;
         // float max_length = (player.cc.radius * ropeLenMult) + ropeProjectileRadius;
         if (distanceVec.magnitude > hitDistance) {
+            if (Vector3.Dot(distanceVec, -Physics.gravity.normalized) > hitDistance) {
+                if (player.OnGround()) player.DoJump();
+                player.SetLostTraction();
+            }
             Vector3 relativeVel = player.GetVelocity();
             MovingGeneric movingTarget = connectedRopePoint.GetComponent<MovingGeneric>();
             if (movingTarget) relativeVel = relativeVel - movingTarget.velocity;

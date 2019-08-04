@@ -76,6 +76,7 @@ public class PlayerController : NetworkedBehaviour {
     private string WALL_HIT_TIMER = "WallHit";
     private string REGRAB_TIMER = "ReGrab";
     private string SET_GRAVITY_TIMER = "GravitySet";
+    private string TRACTION_TIMER = "LostTraction";
     private string MOVING_COLLIDER_TIMER = "MovingCollider";
     private string MOVING_PLATFORM_TIMER = "MovingPlatform";
     private string MOVING_INTERIOR_TIMER = "MovingInterior";
@@ -323,6 +324,7 @@ public class PlayerController : NetworkedBehaviour {
         utils.CreateTimer(CROUCH_TIMER, 0.1f).setFinished();
         utils.CreateTimer(SWIM_TIMER, 0.1f).setFinished();
         utils.CreateTimer(SET_GRAVITY_TIMER, 0.1f).setFinished();
+        utils.CreateTimer(TRACTION_TIMER, 0.1f).setFinished();
 
         if (debug_mode) {
             EnableDebug();
@@ -861,7 +863,7 @@ public class PlayerController : NetworkedBehaviour {
         // Keep velocity in the direction of the plane if the plane is not a ceiling
         // Or if it is a ceiling only cancel out the velocity if we are moving fast enough into its normal
         if (Vector3.Dot(currentHitNormal, Physics.gravity) < 0 || Vector3.Dot(current_velocity, currentHitNormal) < -(cc.radius * 2f)) {
-            current_velocity = Vector3.ProjectOnPlane(current_velocity, currentHitNormal);
+            if (!LostTraction()) current_velocity = Vector3.ProjectOnPlane(current_velocity, currentHitNormal);
         }
 
         // Set last hit null so we don't process it again
@@ -1507,6 +1509,10 @@ public class PlayerController : NetworkedBehaviour {
     public bool IsSwimming() {
         return !utils.CheckTimer(SWIM_TIMER);
     }
+
+    public bool LostTraction() {
+        return !utils.CheckTimer(TRACTION_TIMER);
+    }
     #endregion
 
     #region PUBLIC_INPUT_INTERFACE
@@ -1538,6 +1544,14 @@ public class PlayerController : NetworkedBehaviour {
 
     public void UnsetSwimming() {
         utils.SetTimerFinished(SWIM_TIMER);
+    }
+
+    public void SetLostTraction() {
+        utils.ResetTimer(TRACTION_TIMER);
+    }
+
+    public void UnsetLostTraction() {
+        utils.SetTimerFinished(TRACTION_TIMER);
     }
 
     public void PreventLedgeGrab() {
