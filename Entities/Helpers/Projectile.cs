@@ -5,7 +5,7 @@ using UnityEngine;
 using MLAPI;
 
 public class Projectile : NetworkedBehaviour {
-    public Func<GameObject,bool> callback;
+    public Func<GameObject, bool> callback;
     public Vector3 velocity = Vector3.zero;
     public float lifetime = 0f;
     public float maxDistance = 0f;
@@ -23,6 +23,7 @@ public class Projectile : NetworkedBehaviour {
 
     }
     private void OnTriggerEnter(Collider other) {
+        if (other.isTrigger) return;
         if (callback(other.gameObject)) Destroy(gameObject);
     }
 }
