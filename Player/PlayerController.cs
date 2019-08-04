@@ -1544,6 +1544,10 @@ public class PlayerController : NetworkedBehaviour {
         utils.ResetTimer(REGRAB_TIMER);
     }
 
+    public void AllowLedgeGrab() {
+        utils.SetTimerFinished(REGRAB_TIMER);
+    }
+
     public void Recover(Collider other) {
         if (!IsOwner) return;
         utils.ResetTimer(STUCK_TIMER);

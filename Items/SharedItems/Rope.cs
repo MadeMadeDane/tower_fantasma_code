@@ -68,9 +68,11 @@ public class Rope : SharedItem {
             connectedRopePoint.RemovePlayer(player.NetworkId, utils.get<MovingPlayer>().GetMovingObjectIndex());
             Vector3 forceDir = (connectedRopePoint.transform.position - player.transform.position).normalized + player.GetVelocity().normalized;
             player.SetVelocity(player.GetVelocity() + (forceDir * player.GetVelocity().magnitude * 1f * player.cc.radius));
+            player.AllowLedgeGrab();
             connectedRopePoint = null;
             return;
         }
+        player.PreventLedgeGrab();
         Vector3 distanceVec = connectedRopePoint.transform.position - player.transform.position;
         // float max_length = (player.cc.radius * ropeLenMult) + ropeProjectileRadius;
         if (distanceVec.magnitude > hitDistance) {
