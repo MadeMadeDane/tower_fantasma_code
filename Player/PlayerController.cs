@@ -456,13 +456,13 @@ public class PlayerController : NetworkedBehaviour {
     #region HANDLE_STATE
     private void UpdatePlayerState() {
         // Update character state based on desired movement
-        current_velocity += accel * Time.deltaTime;
+        current_velocity += accel * Time.fixedDeltaTime;
         accel = Vector3.zero;
 
         Vector3 previous_position = transform.position;
         bool failed_move = false;
         try {
-            cc.Move(ComputeMove(current_velocity * Time.deltaTime));
+            cc.Move(ComputeMove(current_velocity * Time.fixedDeltaTime));
         }
         catch (Exception ex) {
             Debug.Log("Failed to move: " + ex.ToString());
@@ -509,7 +509,7 @@ public class PlayerController : NetworkedBehaviour {
             Debug.Log("Attempting error resolution stage " + error_stage.ToString());
             switch (error_stage) {
                 case 1:
-                    Teleport(previous_position - (cc.velocity * Time.deltaTime));
+                    Teleport(previous_position - (cc.velocity * Time.fixedDeltaTime));
                     break;
                 case 2:
                     Debug.Log("Last resort!");
@@ -1108,7 +1108,7 @@ public class PlayerController : NetworkedBehaviour {
         }
 
         // Scale acceleration by speed because we want to go fast
-        deltaSpeed = Mathf.Clamp(acceleration * Time.deltaTime * desiredSpeed, 0, deltaSpeed);
+        deltaSpeed = Mathf.Clamp(acceleration * Time.fixedDeltaTime * desiredSpeed, 0, deltaSpeed);
         current_velocity += deltaSpeed * direction;
 
         if (grounded) {
@@ -1131,7 +1131,7 @@ public class PlayerController : NetworkedBehaviour {
         {
             turn_constant = 0.55f + Mathf.Sign(Vector3.Dot(current_velocity.normalized, direction))*Mathf.Pow(Vector3.Dot(current_velocity.normalized, direction), 2f) * 0.45f;
         }*/
-        Vector3 deltaVel = direction * acceleration * Time.deltaTime;
+        Vector3 deltaVel = direction * acceleration * Time.fixedDeltaTime;
         if (grounded) {
             // Accelerate if we aren't at the desired speed
             Vector3 plane_normal;
