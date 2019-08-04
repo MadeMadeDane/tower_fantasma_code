@@ -237,6 +237,12 @@ public class PlayerController : NetworkedBehaviour {
         if (player_camera == null) {
             return;
         }
+        // Temporary convenience hack to reset the player if we fall off the map
+        if (current_velocity.magnitude > 100f) {
+            Debug.Log("you probably fell off the map...");
+            current_velocity = Vector3.zero;
+            Teleport(Vector3.zero);
+        }
         //RecoverSmart();
         HandleChangesFromLastState();
         ProcessHits();
