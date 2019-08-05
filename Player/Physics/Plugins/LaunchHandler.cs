@@ -34,6 +34,7 @@ public class LaunchHandler : PhysicsPlugin {
             if (CurrentLauncher.conserveUpwardsMomentum && Vector3.Dot(InitialPlayerVelocity, force.normalized) > 0f) relativeOffsetVelocity = InitialPlayerVelocity;
             Vector3 velocityAlongLauncher = Vector3.Project(player.GetVelocity() - relativeOffsetVelocity, force.normalized);
             if (force.magnitude > velocityAlongLauncher.magnitude) force = (force - velocityAlongLauncher) / Time.fixedDeltaTime;
+            // Add mode that redirects all velocity not just velocity along the axis. Also add mode that clamps to the force along the axis
             else force = Vector3.zero;
         }
         player.SetInAir();

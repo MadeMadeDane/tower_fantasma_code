@@ -8,6 +8,7 @@ using MLAPI.Spawning;
 public class Utilities : UnitySingleton<Utilities> {
     private Dictionary<string, Timer> Timers = new Dictionary<string, Timer>();
     public Dictionary<Type, Component> player_data = new Dictionary<Type, Component>();
+    public Dictionary<String, GameObjectPool> pools = new Dictionary<String, GameObjectPool>();
     public GameObject currentPlayer = null;
 
     private IEnumerator WaitUntilConditionCoroutine(Func<bool> check, Action action) {
@@ -215,7 +216,7 @@ public class Utilities : UnitySingleton<Utilities> {
         return (T)player_data[typeof(T)];
     }
     public GameObject FireProjectile(GameObject shooter,
-                               Func<GameObject,bool> cb,
+                               Func<GameObject, bool> cb,
                                float projectileRadius,
                                Vector3 startingVelocity,
                                float lifetime,
@@ -232,7 +233,7 @@ public class Utilities : UnitySingleton<Utilities> {
         SphereCollider col = projectile.gameObject.AddComponent<SphereCollider>();
         col.radius = projectileRadius;
         col.isTrigger = true;
-        foreach (Collider collider in shooter.GetComponentsInChildren<Collider>()){
+        foreach (Collider collider in shooter.GetComponentsInChildren<Collider>()) {
             Physics.IgnoreCollision(col, collider);
         }
         col.gameObject.layer = IGNORE_RAYCAST_LAYER;
@@ -242,6 +243,13 @@ public class Utilities : UnitySingleton<Utilities> {
         projectile.velocity = startingVelocity;
         projectile.lifetime = lifetime;
         return go;
+    }
+
+    public GameObjectPool GetPool(GameObject prefab) {
+        if (!pools.ContainsKey(prefab.name)) {
+            pools[prefab.name] = new GameObjectPool(prefab);
+        }
+        return pools[prefab.name];
     }
 }
 
