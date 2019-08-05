@@ -30,8 +30,8 @@ public class Rope : SharedItem {
 
     public override void Start() {
         base.Start();
-        ropePiecePrefab = (GameObject)Resources.Load("RadioactiveKey");
-        ropeProjectilePrefab = (GameObject)Resources.Load("RadioactiveLock");
+        ropePiecePrefab = (GameObject)Resources.Load("rope_piece");
+        ropeProjectilePrefab = (GameObject)Resources.Load("rope_lasso");
         visualRope = new RenderedRope(ropePiecePrefab, ropePieceLen);
     }
 
