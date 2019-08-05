@@ -242,6 +242,7 @@ public class Utilities : UnitySingleton<Utilities> {
         rb.isKinematic = true;
         projectile.velocity = startingVelocity;
         projectile.lifetime = lifetime;
+        projectile.transform.rotation = Quaternion.LookRotation(startingVelocity, Vector3.up);
         return go;
     }
 

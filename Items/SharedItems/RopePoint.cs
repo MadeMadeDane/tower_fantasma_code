@@ -13,7 +13,7 @@ public class RopePoint : NetworkedBehaviour {
 
     public GameObject ropePiecePrefab;
 
-    public float ropePieceLen = 0.1f;
+    public float ropePieceLen = 0.99f;
 
     public override void NetworkStart() {
         connectedPlayers.Settings.WritePermission = NetworkedVarPermission.Everyone;
@@ -22,6 +22,7 @@ public class RopePoint : NetworkedBehaviour {
     }
     private void Awake() {
         ropes = new Dictionary<ulong, RenderedRope>();
+        if (!ropePiecePrefab) ropePiecePrefab = (GameObject) Resources.Load("rope_piece");
     }
     private void Update() {
         if (connectedPlayers.Count == 0) return;
@@ -80,6 +81,9 @@ public class RenderedRope {
         for (int i = 0; i < ropePieces.Count; i++) {
             ropePieces[i].transform.position = startPoint + shortestPath.normalized * i * ropePieceLen;
             ropePieces[i].transform.rotation = Quaternion.LookRotation(-shortestPath, Vector3.up);
+            Vector3 rotation = ropePieces[i].transform.localRotation.eulerAngles;
+            rotation.z = 0.0f;
+            ropePieces[i].transform.localRotation = Quaternion.Euler(rotation);
         }
     }
     public void destroy() {
