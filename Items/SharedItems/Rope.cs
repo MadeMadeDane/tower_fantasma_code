@@ -22,9 +22,12 @@ public class Rope : SharedItem {
     public float ropePieceLen = 0.1f;
 
     public float hitDistance;
-    public float ropeLenMult = 15.0f;
+    public float ropeLenMult = 30.0f;
     public float ropeSpeedMult = 75f;
-
+    public float climbingRopeSpeed = 20f;
+    public float groundRopeForce = 20f;
+    public float climbingRopeFriction = 100f;
+    public float airRopeFriction = 0.5f;
     public float ropeProjectileRadius = 0.5f;
     public RenderedRope visualRope;
 
@@ -78,6 +81,7 @@ public class Rope : SharedItem {
                 projectileRadius: ropeProjectileRadius,
                 // startingVelocity: player.player_camera.transform.forward * player.cc.radius * 75,
                 startingVelocity: (targetedRp.transform.position - player.transform.position).normalized * player.cc.radius * ropeSpeedMult,
+                target: targetedRp.gameObject,
                 lifetime: 100f,
                 maxDistance: player.cc.radius * ropeLenMult,
                 prefab: ropeProjectilePrefab);
@@ -85,7 +89,7 @@ public class Rope : SharedItem {
             player.ShortHopTempDisable = true;
             utils.WaitUntilCondition(() => !SharedItemButtonHold(), () => { ropeFired = false; });
         }
-        // if (!ropeObject) ropeFired = false; <-- use for press instead of hold
+        // else if (ropeFired && (SharedItemButtonPress() || (!ropeObject && !connectedRopePoint))) ropeFired = false; // use for press instead of hold
 
         if (ropeFired && !connectedRopePoint && ropeObject) {
             visualRope.render(player.transform.position, ropeObject.transform.position);
@@ -95,6 +99,7 @@ public class Rope : SharedItem {
             visualRope.destroy();
         }
     }
+
     public override void FixedUpdate() {
         if (connectedRopePoint == null) return;
         if (!ropeFired) {
@@ -109,29 +114,44 @@ public class Rope : SharedItem {
         Vector3 distanceVec = connectedRopePoint.transform.position - player.transform.position;
         // float max_length = (player.cc.radius * ropeLenMult) + ropeProjectileRadius;
         if (distanceVec.magnitude > hitDistance) {
-            if (Vector3.Dot(distanceVec, -Physics.gravity.normalized) > hitDistance) {
+            if (Vector3.Dot(distanceVec, -Physics.gravity.normalized) > hitDistance * 0.9f) {
                 if (player.OnGround()) player.DoJump();
                 player.SetLostTraction();
             }
             Vector3 relativeVel = player.GetVelocity();
             MovingGeneric movingTarget = connectedRopePoint.GetComponent<MovingGeneric>();
             if (movingTarget) relativeVel = relativeVel - movingTarget.velocity;
-            Vector3 distance = distanceVec - (hitDistance * distanceVec.normalized);
-            // Debug.DrawRay(player.transform.position, -distance, Color.blue, 100f);
-            // Debug.DrawRay(player.transform.position, distanceVec, Color.green, 100f);
-            // Vector3 project = Vector3.Project(relativeVel, distanceVec);
-            // Vector3 force = distance * 2.0f - project * 1.0f;
+            Vector3 rope_stretch = distanceVec - (hitDistance * distanceVec.normalized);
 
             Vector3 newRelativeVel = relativeVel;
             if (Vector3.Dot(distanceVec, newRelativeVel) < 0) {
                 newRelativeVel = Vector3.ProjectOnPlane(newRelativeVel, distanceVec);
             }
-            newRelativeVel += distance * 2.0f;
+            if (player.OnGround()) newRelativeVel += rope_stretch * groundRopeForce;
+            else newRelativeVel += distanceVec.normalized * Mathf.Sqrt(2f * rope_stretch.magnitude * Mathf.Abs(Vector3.Dot(Physics.gravity.normalized, distanceVec.normalized)));
             player.SetVelocity(player.GetVelocity() + (newRelativeVel - relativeVel));
         }
-
-        player.Accelerate(-player.GetVelocity() * player.cc.radius * 0.5f);
+        if (im.GetUseHold() && !player.OnGround()) {
+            player.SetDisableMovement();
+            Vector3 relativeVel = player.GetVelocity();
+            MovingGeneric movingTarget = connectedRopePoint.GetComponent<MovingGeneric>();
+            if (movingTarget) relativeVel = relativeVel - movingTarget.velocity;
+            Vector3 sphereVel = Vector3.ProjectOnPlane(relativeVel, distanceVec);
+            float ropeWindingConstant = im.GetMoveVertical() * climbingRopeSpeed * player.cc.radius * Mathf.Abs(Vector3.Dot(Physics.gravity.normalized, distanceVec.normalized));
+            float rope_delta = -ropeWindingConstant * Time.fixedDeltaTime;
+            if (Mathf.Abs(distanceVec.magnitude - hitDistance) < Mathf.Abs(rope_delta)) {
+                if (!player.CapsuleCastPlayer(direction: rope_delta * Physics.gravity, maxDistance: Mathf.Abs(rope_delta) + player.cc.radius)) {
+                    hitDistance = hitDistance + rope_delta;
+                    float maxDistance = (player.cc.radius * ropeLenMult) + ropeProjectileRadius;
+                    if (hitDistance > maxDistance) hitDistance = maxDistance;
+                }
+            }
+            if (Vector3.Dot(sphereVel, Physics.gravity) < 0) player.Accelerate(-sphereVel * player.cc.radius * climbingRopeFriction);
+            player.Accelerate(-Vector3.Project(relativeVel * player.cc.radius * climbingRopeFriction, distanceVec));
+        };
+        player.Accelerate(-player.GetVelocity() * player.cc.radius * airRopeFriction);
     }
+
     private bool hit_cb(GameObject hit_entity) {
         RopePoint ropePoint = hit_entity.GetComponentInChildren<RopePoint>();
         if (ropePoint) {

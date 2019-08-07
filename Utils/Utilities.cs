@@ -220,6 +220,7 @@ public class Utilities : UnitySingleton<Utilities> {
                                float projectileRadius,
                                Vector3 startingVelocity,
                                float lifetime,
+                               GameObject target = null,
                                float maxDistance = 0f,
                                Vector3 startingOffset = default(Vector3),
                                GameObject prefab = null) {
@@ -230,6 +231,7 @@ public class Utilities : UnitySingleton<Utilities> {
         projectile.callback = cb;
         projectile.shooter = shooter;
         projectile.maxDistance = maxDistance;
+        projectile.target = target;
         SphereCollider col = projectile.gameObject.AddComponent<SphereCollider>();
         col.radius = projectileRadius;
         col.isTrigger = true;

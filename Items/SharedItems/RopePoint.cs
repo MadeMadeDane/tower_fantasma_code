@@ -22,7 +22,7 @@ public class RopePoint : NetworkedBehaviour {
     }
     private void Awake() {
         ropes = new Dictionary<ulong, RenderedRope>();
-        if (!ropePiecePrefab) ropePiecePrefab = (GameObject) Resources.Load("rope_piece");
+        if (!ropePiecePrefab) ropePiecePrefab = (GameObject)Resources.Load("rope_piece");
     }
     private void Update() {
         if (connectedPlayers.Count == 0) return;
@@ -62,7 +62,6 @@ public class RopePoint : NetworkedBehaviour {
 public class RenderedRope {
     private List<GameObject> ropePieces;
     private GameObjectPool objectPool;
-    private Vector3 previousShortestPath;
 
     private float ropePieceLen;
 
@@ -73,8 +72,6 @@ public class RenderedRope {
     }
     public void render(Vector3 startPoint, Vector3 endPoint) {
         Vector3 shortestPath = endPoint - startPoint;
-        if (previousShortestPath == shortestPath) return;
-        previousShortestPath = shortestPath;
 
         int numberOfRopePieces = (int)Math.Round(shortestPath.magnitude / ropePieceLen, 0);
         objectPool.request(ropePieces, numberOfRopePieces);

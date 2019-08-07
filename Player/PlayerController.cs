@@ -83,6 +83,7 @@ public class PlayerController : NetworkedBehaviour {
     private string STUCK_TIMER = "Stuck";
     private string CROUCH_TIMER = "Crouch";
     private string SWIM_TIMER = "SwimTimer";
+    private string MOVE_DISABLE_TIMER = "MovementDisabled";
 
     // Jumping state variables
     private float JumpMeterThreshold;
@@ -331,6 +332,7 @@ public class PlayerController : NetworkedBehaviour {
         utils.CreateTimer(SWIM_TIMER, 0.1f).setFinished();
         utils.CreateTimer(SET_GRAVITY_TIMER, 0.1f).setFinished();
         utils.CreateTimer(TRACTION_TIMER, 0.1f).setFinished();
+        utils.CreateTimer(MOVE_DISABLE_TIMER, 0.1f).setFinished();
 
         if (debug_mode) {
             EnableDebug();
@@ -416,7 +418,7 @@ public class PlayerController : NetworkedBehaviour {
         MoveAccumulatorMax = 5f;
         MoveAccumulatorScaleFactor = 6f;
         // Toggles
-        conserveUpwardMomentum = false;
+        conserveUpwardMomentum = true;
         wallJumpEnabled = true;
         wallRunEnabled = false;
         wallClimbEnabled = true;
@@ -1020,6 +1022,7 @@ public class PlayerController : NetworkedBehaviour {
 
         Vector3 planevelocity = Vector3.ProjectOnPlane(current_velocity, lastFloorHitNormal);
         Vector3 movVec = GetMoveVector();
+        if (MovementDisabled()) movVec = Vector3.zero;
         // Force a 20% cutoff region where only the player is rotated but not moved
         float movmag = movVec.magnitude < 0.2f ? 0f : movVec.magnitude;
         // Do this first so we cancel out incremented time from update before checking it
@@ -1207,7 +1210,15 @@ public class PlayerController : NetworkedBehaviour {
         SetCollision(true);
     }
 
-    private bool CapsuleCastPlayer(Vector3 origin, Vector3 direction, out RaycastHit hitInfo, float maxDistance) {
+    public bool CapsuleCastPlayer(Vector3 direction, float maxDistance) {
+        return CapsuleCastPlayer(origin: transform.position, direction: direction, hitInfo: out RaycastHit hitInfo, maxDistance: maxDistance);
+    }
+
+    public bool CapsuleCastPlayer(Vector3 direction, out RaycastHit hitInfo, float maxDistance) {
+        return CapsuleCastPlayer(origin: transform.position, direction: direction, hitInfo: out hitInfo, maxDistance: maxDistance);
+    }
+
+    public bool CapsuleCastPlayer(Vector3 origin, Vector3 direction, out RaycastHit hitInfo, float maxDistance) {
         float radius = cc.radius;
         Vector3 start = origin - transform.up * (cc.height / 2 - radius);
         Vector3 end = origin + transform.up * (cc.height / 2 - radius);
@@ -1519,6 +1530,10 @@ public class PlayerController : NetworkedBehaviour {
     public bool LostTraction() {
         return !utils.CheckTimer(TRACTION_TIMER);
     }
+
+    public bool MovementDisabled() {
+        return !utils.CheckTimer(MOVE_DISABLE_TIMER);
+    }
     #endregion
 
     #region PUBLIC_INPUT_INTERFACE
@@ -1558,6 +1573,14 @@ public class PlayerController : NetworkedBehaviour {
 
     public void UnsetLostTraction() {
         utils.SetTimerFinished(TRACTION_TIMER);
+    }
+
+    public void SetDisableMovement() {
+        utils.ResetTimer(MOVE_DISABLE_TIMER);
+    }
+
+    public void SetEnableMovement() {
+        utils.SetTimerFinished(MOVE_DISABLE_TIMER);
     }
 
     public void PreventLedgeGrab() {
