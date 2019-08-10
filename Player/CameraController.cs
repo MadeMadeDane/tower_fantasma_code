@@ -48,8 +48,6 @@ public class CameraController : NetworkedBehaviour {
 
     // Other Settings
     private float transparency_divider_mult;
-    private float fully_translucent_threshold;
-    private bool fade_texture_in_use;
     private Material opaque_material;
     public Material fade_material;
     private Mesh original_model;
@@ -65,7 +63,6 @@ public class CameraController : NetworkedBehaviour {
         QualitySettings.vSyncCount = 0;
         // Application.targetFrameRate = 45;
         transparency_divider_mult = 8;
-        fully_translucent_threshold = 1;
         if (home == null) {
             home = transform.parent.gameObject;
         }
@@ -110,7 +107,6 @@ public class CameraController : NetworkedBehaviour {
         handleCameraMove = FirstPersonCameraMove;
         handlePlayerRotate = FirstPersonPlayerRotate;
         target_follow_angle = Vector3.zero;
-        target_follow_distance = new Vector3(0, target.GetHeadHeight(), 0);
 
         if (current_player != null) {
             current_player.player_camera = null;
@@ -125,6 +121,7 @@ public class CameraController : NetworkedBehaviour {
         yaw_pivot.transform.localRotation = Quaternion.identity;
         transform.parent = yaw_pivot.transform;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
+        SetTargetPos();
     }
 
     private void SetThirdPersonActionVars(PlayerController target) {
@@ -132,7 +129,6 @@ public class CameraController : NetworkedBehaviour {
         handleCameraMove = ThirdPersonCameraMove;
         handlePlayerRotate = ThirdPersonPlayerRotate;
         target_follow_angle = new Vector3(14f, 0, 0);
-        target_follow_distance = new Vector3(0, target.GetHeadHeight() * 1.75f, -target.cc.height * 1.75f);
 
         if (current_player != null) {
             current_player.player_camera = null;
@@ -145,6 +141,7 @@ public class CameraController : NetworkedBehaviour {
         yaw_pivot.transform.parent = player_container.transform;
         transform.parent = pitch_pivot.transform;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
+        SetTargetPos();
     }
 
     private void SetThirdPersonShooterVars(PlayerController target) {
@@ -152,7 +149,6 @@ public class CameraController : NetworkedBehaviour {
         handleCameraMove = ThirdPersonShooterCameraMove;
         handlePlayerRotate = delegate { };
         target_follow_angle = new Vector3(0, 0, 0);
-        target_follow_distance = new Vector3(target.cc.radius * 2f, target.GetHeadHeight(), -target.cc.height);
 
         if (current_player != null) {
             current_player.player_camera = null;
@@ -165,6 +161,7 @@ public class CameraController : NetworkedBehaviour {
         yaw_pivot.transform.parent = player_container.transform;
         transform.parent = pitch_pivot.transform;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
+        SetTargetPos();
     }
 
     public void ThirdPersonJumpCallback() {
@@ -315,7 +312,7 @@ public class CameraController : NetworkedBehaviour {
                 break;
             case ViewMode.Third_Person:
                 target_follow_distance = new Vector3(
-                    0, current_player.GetHeadHeight() * 1.75f, -current_player.cc.height * 1.75f);
+                    0, current_player.GetHeadHeight() * 0.75f, -current_player.cc.height * 1.75f);
                 break;
             case ViewMode.Third_Person_Shooter:
                 target_follow_distance = new Vector3(
@@ -331,24 +328,17 @@ public class CameraController : NetworkedBehaviour {
             if (view_mode == ViewMode.Third_Person || !show_model_in_inspection) {
                 float distance_to_head = (current_player.GetHeadHeight() * current_player.transform.up + current_player.transform.position - transform.position).magnitude;
                 if (distance_to_head < (transparency_divider_mult * current_player.cc.radius)) {
-                    if (!fade_texture_in_use) {
-                        fade_texture_in_use = true;
-                        render.material = fade_material;
-                    }
+                    if (render.material != fade_material) render.material = fade_material;
                     textureColor = render.material.color;
-                    textureColor.a = distance_to_head < fully_translucent_threshold ? 0 : distance_to_head / (transparency_divider_mult * current_player.cc.radius);
+                    textureColor.a = Mathf.Pow(distance_to_head / (transparency_divider_mult * current_player.cc.radius), 2);
                     render.material.color = textureColor;
                 }
                 else {
-                    if (fade_texture_in_use) {
-                        fade_texture_in_use = false;
-                        render.material = opaque_material;
-                    }
+                    if (render.material != opaque_material) render.material = opaque_material;
                 }
             }
             else {
-                fade_texture_in_use = false;
-                render.material = opaque_material;
+                if (render.material != opaque_material) render.material = opaque_material;
             }
         }
     }
@@ -401,6 +391,7 @@ public class CameraController : NetworkedBehaviour {
 
         HandleTargetLock();
         FollowPlayerVelocity();
+        ApplyForcesToCamera();
         if (utils.CheckTimer(IDLE_TIMER)) {
             RotateTowardIdleOrientation();
         }
@@ -429,6 +420,7 @@ public class CameraController : NetworkedBehaviour {
         utils.ResetTimer(LOCK_TIMER);
     }
 
+    // TODO: Convert to using torque
     private void FollowPlayerVelocity() {
         if (utils.CheckTimer(IDLE_TIMER) && !ManualCamera) {
             Vector3 player_ground_vel;
@@ -459,7 +451,37 @@ public class CameraController : NetworkedBehaviour {
                 idleOrientation = mouseAccumulator;
             }
         }
-        yaw_pivot.transform.position = Vector3.Lerp(yaw_pivot.transform.position, current_player.transform.position, 0.025f);
+    }
+
+    private bool CheckCameraSphere() {
+        return CheckCameraSphere(position: transform.position);
+    }
+
+    private bool CheckCameraSphere(Vector3 position) {
+        return Physics.CheckSphere(position: position, radius: GetCameraRadius());
+    }
+
+    private bool SphereCastCamera(Vector3 new_position, out RaycastHit hitInfo) {
+        return SphereCastCamera(position: transform.position, direction: new_position - transform.position, hitInfo: out hitInfo);
+    }
+
+    private bool SphereCastCamera(Vector3 position, Vector3 direction, out RaycastHit hitInfo) {
+        return Physics.SphereCast(origin: position, radius: GetCameraRadius(), direction: direction, hitInfo: out hitInfo, maxDistance: direction.magnitude);
+    }
+
+    private void ApplyForcesToCamera() {
+        float cameraPushDelta = 30f * GetCameraRadius() * Time.fixedDeltaTime;
+        yaw_pivot.transform.position = Vector3.Lerp(yaw_pivot.transform.position, current_player.GetHeadPosition(), 0.025f);
+        if (CheckCameraSphere()) {
+            transform.localPosition -= target_follow_distance.normalized * cameraPushDelta;
+        }
+        else {
+            Vector3 new_local_pos = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
+            // if (SphereCastCamera(new_position: transform.TransformPoint(new_local_pos), hitInfo: out RaycastHit hitInfo)) {
+            if (!CheckCameraSphere(position: pitch_pivot.transform.TransformPoint(new_local_pos))) {
+                transform.localPosition = new_local_pos;
+            }
+        }
     }
 
     private Vector2 EulerToMouseAccum(Vector3 euler_angle) {
@@ -469,51 +491,30 @@ public class CameraController : NetworkedBehaviour {
         return new Vector2(yaw, adjusted_pitch);
     }
 
-    private void AvoidWalls() {
-        RaycastHit hit;
-        Vector3 startpos = current_player.transform.position;
-        Vector3 world_target_vec = transform.TransformVector(Quaternion.Inverse(transform.localRotation) * target_follow_distance);
-        Vector3 path = (yaw_pivot.transform.position + world_target_vec - startpos);
-        //Debug.DrawRay(startpos, path.normalized*(path.magnitude+1f), Color.green);
+    private float GetCameraRadius() {
+        return current_player.cc.radius;
+    }
 
-        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude + (current_player.cc.height / 12f))) {
-            Vector3 pivot_hit = (hit.point - yaw_pivot.transform.position);
-            // Ignore hits that are too far away
-            if (pivot_hit.magnitude > target_follow_distance.magnitude + (current_player.cc.height / 12f)) {
-                //Debug.Log("Too far hit");
-                transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
-            }
-            // Very close hits should move the camera to a predefined location
-            else if (hit.distance < (current_player.cc.height / 12f)) {
-                //Debug.Log("Too close hit");
-                if (pitch_pivot.transform.localRotation.x < 0) {
-                    transform.localPosition = Vector3.Lerp(transform.localPosition, (Quaternion.Inverse(pitch_pivot.transform.localRotation) * Vector3.up * target_follow_distance.y), 0.1f);
-                }
-                else {
-                    transform.localPosition = Vector3.Lerp(transform.localPosition, (Vector3.up * target_follow_distance.y), 0.1f);
-                }
-                transform.localPosition = new Vector3(target_follow_distance.x, transform.localPosition.y, transform.localPosition.z);
-            }
-            // Otherwise move the camrea to where the hit is, minus an offset
-            else {
-                //Debug.Log("Wall hit");
-                float horizontal_displacement = Vector3.Dot(pivot_hit, pitch_pivot.transform.forward);
-                if (pitch_pivot.transform.localRotation.x < 0) {
-                    transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - (current_player.cc.height / 12f)) * Vector3.forward) + (Quaternion.Inverse(pitch_pivot.transform.localRotation) * Vector3.up * target_follow_distance.y);
-                }
-                else {
-                    transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - (current_player.cc.height / 12f)) * Vector3.forward) + (Vector3.up * target_follow_distance.y);
-                }
-                transform.localPosition += transform.InverseTransformDirection(hit.normal) * controlled_camera.rect.width / 2;
-                transform.localPosition = new Vector3(target_follow_distance.x, transform.localPosition.y, transform.localPosition.z);
-            }
-        }
-        else {
-            //Debug.Log("No hit");
-            transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
+    private void AvoidWalls() {
+        Vector3 startpos = pitch_pivot.transform.position;
+        Vector3 world_target_vec = pitch_pivot.transform.TransformVector(target_follow_distance);
+
+        if (Physics.Raycast(startpos, world_target_vec.normalized, out RaycastHit hit, world_target_vec.magnitude + GetCameraRadius())) {
+            Vector3 distance_to_hit = (hit.point - startpos);
+            float target_distance_delta = GetCameraRadius() / Mathf.Abs(Vector3.Dot(hit.normal, world_target_vec.normalized));
+            float new_target_magnitude = distance_to_hit.magnitude - target_distance_delta;
+            Vector3 feet_to_hit = hit.point - current_player.GetFootPosition();
+            float camera_feet_delta = Vector3.Project(feet_to_hit, Physics.gravity).magnitude;
+            float foot_cam_coefficient = Mathf.Clamp((camera_feet_delta / GetCameraRadius()) - 1f, 0f, 1f);
+
+            float horizontal_displacement = Mathf.Max(Vector3.ProjectOnPlane(feet_to_hit, Physics.gravity).magnitude - (2f * GetCameraRadius()), 0f);
+            float vertical_offset_coefficient = Mathf.Clamp(horizontal_displacement / current_player.cc.height, 0f, 1f);
+            transform.localPosition = target_follow_distance.normalized * new_target_magnitude * (foot_cam_coefficient + ((1 - foot_cam_coefficient) * vertical_offset_coefficient));
+            transform.localPosition = new Vector3(target_follow_distance.x, transform.localPosition.y, transform.localPosition.z); // Needed for thirdperson shooter mode
         }
     }
 
+    // TODO: Convert to using torque
     private void RotateTowardIdleOrientation() {
         if (ManualCamera) {
             return;
