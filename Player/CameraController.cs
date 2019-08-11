@@ -82,7 +82,7 @@ public class CameraController : NetworkedBehaviour {
         utils.CreateTimer(IDLE_TIMER, 1.0f);
         utils.CreateTimer(LOCK_TIMER, 0.1f);
 
-        opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
+        opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterial;
         original_model = home.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
 
         PlayerController player_home = home.GetComponent<PlayerController>();
@@ -328,17 +328,17 @@ public class CameraController : NetworkedBehaviour {
             if (view_mode == ViewMode.Third_Person || !show_model_in_inspection) {
                 float distance_to_head = (current_player.GetHeadHeight() * current_player.transform.up + current_player.transform.position - transform.position).magnitude;
                 if (distance_to_head < (transparency_divider_mult * current_player.cc.radius)) {
-                    if (render.material != fade_material) render.material = fade_material;
-                    textureColor = render.material.color;
+                    if (render.sharedMaterial != fade_material) render.sharedMaterial = fade_material;
+                    textureColor = render.sharedMaterial.color;
                     textureColor.a = Mathf.Pow(distance_to_head / (transparency_divider_mult * current_player.cc.radius), 2);
-                    render.material.color = textureColor;
+                    render.sharedMaterial.color = textureColor;
                 }
                 else {
-                    if (render.material != opaque_material) render.material = opaque_material;
+                    if (render.sharedMaterial != opaque_material) render.sharedMaterial = opaque_material;
                 }
             }
             else {
-                if (render.material != opaque_material) render.material = opaque_material;
+                if (render.sharedMaterial != opaque_material) render.sharedMaterial = opaque_material;
             }
         }
     }
