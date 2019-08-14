@@ -61,7 +61,7 @@ public class PlayerController : NetworkedBehaviour {
     // Managers
     private InputManager input_manager;
     private Utilities utils;
-    private PhysicsPropHandler physhandler;
+    public PhysicsPropHandler physhandler;
 
     // Timers
     private string JUMP_METER = "JumpMeter";
@@ -749,6 +749,13 @@ public class PlayerController : NetworkedBehaviour {
                 HandleLedgeHang();
             }
         }
+        else {
+            if (Physics.Raycast(transform.position, GetMoveVector(), out RaycastHit hit, cc.radius * WallScanDistanceMult)) {
+                if (IsWall(hit.normal)) {
+                    physhandler.OnWallHit(hit.normal, hit.point, hit.collider.gameObject);
+                }
+            }
+        }
 
         lastTrigger = null;
     }
@@ -1307,7 +1314,7 @@ public class PlayerController : NetworkedBehaviour {
             }
             if (!OnGround() && CanWallJump() && WallJumpReflect.magnitude > 0) {
                 //Debug.Log("Wall Jump");
-                current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * JumpMeterComputed;
+                current_velocity += Vector3.ProjectOnPlane((WallJumpReflect - current_velocity) * WallJumpBoost * JumpMeterComputed, Vector3.up);
                 if (conserveUpwardMomentum) {
                     current_velocity.y = Math.Max(current_velocity.y + (WallJumpSpeedMult * cc_standHeight * JumpMeterComputed), WallJumpSpeedMult * cc_standHeight * JumpMeterComputed);
                 }
@@ -1319,7 +1326,7 @@ public class PlayerController : NetworkedBehaviour {
             }
             else if (!OnGround() && IsWallRunning()) {
                 //Debug.Log("Wall Run Jump");
-                current_velocity += PreviousWallNormal * WallRunJumpSpeedMult * cc.radius * JumpMeterComputed;
+                current_velocity += Vector3.ProjectOnPlane(PreviousWallNormal * WallRunJumpSpeedMult * cc.radius * JumpMeterComputed, Vector3.up);
                 float pathvel = Vector3.Dot(current_velocity, transform.forward);
                 float newspeed = Mathf.Clamp(pathvel + (WallRunJumpBoostAddMult * cc.radius * JumpMeterComputed), 0f, WallRunJumpBoostSpeedMult * cc.radius);
                 current_velocity += transform.forward * (newspeed - pathvel);
