@@ -380,7 +380,7 @@ public class CameraController : NetworkedBehaviour {
         }
         // Allow the player to press up against a wall
         else if (current_player.IsOnWall()) {
-            if (Vector3.Dot(current_player.GetLastWallNormal(), current_player.GetMoveVector()) < -0.7f) {
+            if (current_player.physhandler.GetPlugin<Climber>().IsClimbing() || Vector3.Dot(current_player.GetLastWallNormal(), current_player.GetMoveVector()) < -0.7f) {
                 desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
             }
         }
