@@ -12,4 +12,5 @@ public class Launcher : PhysicsProp {
     public bool isImpulse;
     public bool activated;
     public bool conserveUpwardsMomentum;
+    public bool cancelGravity;
 }

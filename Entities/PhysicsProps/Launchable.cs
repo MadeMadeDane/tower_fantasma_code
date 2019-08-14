@@ -28,6 +28,9 @@ public class Launchable : PhysicsProp {
 
         Vector3 force = CurrentLauncher.force;
         if (CurrentLauncher.isLocalForce) force = CurrentLauncher.transform.TransformVector(force);
+        if (CurrentLauncher.cancelGravity) {
+            if (Vector3.Dot(rigidbody.velocity, Physics.gravity) > 0) rigidbody.AddForce(-Vector3.Project(rigidbody.velocity, Physics.gravity), ForceMode.VelocityChange);
+        }
         if (CurrentLauncher.isImpulse) {
             // Calculate the necessary force to accelerate the player to the desired velocity
             Vector3 relativeOffsetVelocity = Vector3.zero;
