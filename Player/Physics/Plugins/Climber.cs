@@ -26,23 +26,32 @@ public class Climber : PhysicsPlugin {
 
     private void HandleClimbableSurfaces() {
         // Make sure we are running into a wall
-        if (!PreviousWall || !player.IsOnWall()) return;
-        if (player.OnGround()) player.Accelerate(-Physics.gravity * 2f);
+        if (!PreviousWall) return;
+        if (player.OnGround() && Vector3.Dot(player.GetMoveVector(), PreviousWallNormal) < 0) player.Accelerate(-Physics.gravity * 10f);
+        if (!player.IsOnWall()) return;
 
+        if (!player.OnGround()) player.SetDisableMovement();
         player.SetGravity(0f);
         player.Accelerate(-PreviousWallNormal * player.cc.radius * 20f);
         if (Vector3.Dot(player.GetVelocity(), PreviousWallNormal) > 0) {
             player.SetVelocity(Vector3.ProjectOnPlane(player.GetVelocity(), PreviousWallNormal));
         }
         player.Accelerate(-Vector3.ProjectOnPlane(player.GetVelocity(), PreviousWallNormal) * ClimbSpeedDampMult * player.cc.radius);
-        float wallAxisMove = Vector3.Dot(player.GetMoveVector(), -PreviousWallNormal);
+        Vector3 playerMove = player.GetMoveVector();
+        float wallAxisMove = Vector3.Dot(playerMove, -PreviousWallNormal);
+
         //Debug.DrawRay(player.transform.position, player.GetMoveVector(), Color.green);
         //Debug.DrawRay(player.transform.position, player.transform.up * wallAxisMove, Color.red);
-        player.Accelerate(player.transform.up * wallAxisMove * ClimbSpeedMult * player.cc.radius);
+        Vector3 climbMove = (player.transform.up * input_manager.GetMoveVertical()) + (player.transform.right * input_manager.GetMoveHorizontal());
+        player.Accelerate(Vector3.ClampMagnitude(climbMove, 1f) * ClimbSpeedMult * player.cc.radius);
         player.player_camera.RotatePlayerToward(Vector3.ProjectOnPlane(-PreviousWallNormal, player.transform.up), 0.5f);
         player.player_camera.RotateCameraToward((player.transform.up * wallAxisMove) * (wallAxisMove > 0 ? 2f : 1f) + player.transform.forward, 0.003f);
         player.PreventLedgeGrab();
         //Debug.DrawRay(PreviousWallPos, PreviousWallNormal, Color.blue, 10f);
+    }
+
+    public bool IsClimbing() {
+        return !utils.CheckTimer(CLIMB_TIMER);
     }
 
     public override void OnWallHit(Vector3 normal, Vector3 point, GameObject go, PhysicsProp prop) {
